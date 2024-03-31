@@ -5,6 +5,7 @@
   "author": "Name",
   "license": "MIT",
   "dependencies": {
-    "@octokit/rest": "^16.0.0"
+    "@octokit/rest": "^16.0.0",
+    "axios": "^0.24.0"
   }
 }
