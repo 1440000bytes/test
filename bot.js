@@ -21,14 +21,21 @@ async function analyzePullRequest(owner, repo, pull_number) {
       pull_number: pull_number
     });
 
+    // Fetch the commit details associated with the pull request
+    const commit = await octokit.repos.getCommit({
+      owner: owner,
+      repo: repo,
+      ref: pullRequest.data.head.sha
+    });
+
     const pullRequestTitle = pullRequest.data.title;
     const pullRequestNumber = assignNumber(pull_number);
-    const pullRequestDocument = pullRequest.data.body; // Assuming the body contains the document
+    const commitContent = commit.data.files.map(file => file.content).join('\n'); // Assuming you want to concatenate content of all files in the commit
 
-    // Concatenate the question with the pull request document
-    const prompt = `Does the grammar of this document look correct? Is it related to Bitcoin? Do you see any issues or scope of improvement?\n\n${pullRequestDocument}`;
+    // Concatenate the question with the commit content
+    const prompt = `Does the grammar of this commit content look correct? Is it related to Bitcoin? Do you see any issues or scope of improvement?\n\n${commitContent}`;
 
-    // Call ChatGPT API to analyze the pull request document
+    // Call ChatGPT API to analyze the commit content
     const chatGPTResponse = await axios.post('https://api.openai.com/v1/completions', {
       model: 'text-davinci-003', // Adjust the model as needed
       prompt: prompt,
