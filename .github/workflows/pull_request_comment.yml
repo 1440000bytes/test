@@ -23,6 +23,7 @@ jobs:
       - name: Execute bot script
         env:
           GITHUB_TOKEN: ${{ secrets.TEST_SECRET }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           number: ${{ github.event.number }}
