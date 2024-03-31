@@ -1,5 +1,6 @@
 const { Octokit } = require("@octokit/rest");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require("axios");
 
 // Create an Octokit instance
 const octokit = new Octokit({
