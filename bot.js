@@ -37,7 +37,7 @@ async function analyzePullRequest(owner, repo, pull_number) {
 
     // Call ChatGPT API to analyze the commit content
     const chatGPTResponse = await axios.post('https://api.openai.com/v1/completions', {
-      model: 'text-davinci-003', // Adjust the model as needed
+      model: 'gpt-3.5-turbo-1106', // Adjust the model as needed
       prompt: prompt,
       max_tokens: 150, // Adjust as needed
       temperature: 0.7, // Adjust as needed
