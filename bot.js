@@ -1,15 +1,11 @@
-const { Octokit } = require("@octokit/rest");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// Create an Octokit instance
-const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN // Make sure to set this token in your GitHub repository secrets
-});
-
+async function analyzePullRequest(owner, repo, pull_number) {
+  try {
     // Concatenate the question with the commit content
     const prompt = `Does the grammar of this commit content look correct? Is it related to Bitcoin? Do you see any issues or scope of improvement?`;
 
-    // Access your API key as an environment variable (see "Set up your API key" above)
+    // Access your API key as an environment variable
     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
     // For text-only input, use the gemini-pro model
@@ -25,7 +21,7 @@ const octokit = new Octokit({
       response: responseText
     };
   } catch (error) {
-    console.error('Error analyzing pull request:', error);
+    console.error('Error analyzing pull request:', error)
     throw error;
   }
 }
@@ -35,7 +31,6 @@ async function handlePullRequestEvent() {
   const { owner, repo, number } = process.env;
 
   try {
-
     // Analyze the pull request document using Google Generative AI
     const analysisResult = await analyzePullRequest(owner, repo, number);
 
