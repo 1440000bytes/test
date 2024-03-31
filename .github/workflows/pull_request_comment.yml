@@ -18,12 +18,12 @@ jobs:
           node-version: '14'
 
       - name: Install dependencies
-        run: npm install @octokit/rest
+        run: npm install @octokit/rest @google/generative-ai
 
       - name: Execute bot script
         env:
           GITHUB_TOKEN: ${{ secrets.TEST_SECRET }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }} 
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           owner: ${{ github.repository_owner }}
           repo: ${{ github.event.repository.name }}
           number: ${{ github.event.number }}
