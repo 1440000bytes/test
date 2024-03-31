@@ -1,22 +1,56 @@
 const { Octokit } = require("@octokit/rest");
+const axios = require("axios");
 
 // Create an Octokit instance
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN // Make sure to set this token in your GitHub repository secrets
 });
 
-// Function to post a comment on the pull request
-async function postComment(owner, repo, pull_number, comment) {
+// Function to assign a number to the pull request
+function assignNumber(pull_number) {
+  return `B${pull_number}`;
+}
+
+// Function to fetch the pull request document and check grammar and relevance to Bitcoin using ChatGPT
+async function analyzePullRequest(owner, repo, pull_number) {
   try {
-    await octokit.issues.createComment({
+    // Fetch the pull request details
+    const pullRequest = await octokit.pulls.get({
       owner: owner,
       repo: repo,
-      issue_number: pull_number,
-      body: comment
+      pull_number: pull_number
     });
-    console.log('Comment posted successfully.');
+
+    const pullRequestTitle = pullRequest.data.title;
+    const pullRequestNumber = assignNumber(pull_number);
+    const pullRequestDocument = pullRequest.data.body; // Assuming the body contains the document
+
+    // Concatenate the question with the pull request document
+    const prompt = `Does the grammar of this document look correct? Is it related to Bitcoin? Do you see any issues or scope of improvement?\n\n${pullRequestDocument}`;
+
+    // Call ChatGPT API to analyze the pull request document
+    const chatGPTResponse = await axios.post('https://api.openai.com/v1/completions', {
+      model: 'text-davinci-003', // Adjust the model as needed
+      prompt: prompt,
+      max_tokens: 150, // Adjust as needed
+      temperature: 0.7, // Adjust as needed
+      stop: ['###'] // Adjust as needed
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` // Make sure to set this token in your environment or GitHub repository secrets
+      }
+    });
+
+    const chatGPTResponseText = chatGPTResponse.data.choices[0].text.trim();
+
+    return {
+      number: pullRequestNumber,
+      chatGPTResponse: chatGPTResponseText
+    };
   } catch (error) {
-    console.error('Error posting comment:', error);
+    console.error('Error analyzing pull request:', error);
+    throw error;
   }
 }
 
@@ -24,20 +58,18 @@ async function postComment(owner, repo, pull_number, comment) {
 async function handlePullRequestEvent() {
   const { owner, repo, number } = process.env;
 
-  // Fetch the pull request details
-  const pullRequest = await octokit.pulls.get({
-    owner: owner,
-    repo: repo,
-    pull_number: number
-  });
+  try {
+    // Assign a number to the pull request
+    const pullRequestNumber = assignNumber(number);
 
-  const pullRequestTitle = pullRequest.data.title;
-  const comment = `The title of this pull request is: "${pullRequestTitle}"`;
+    // Analyze the pull request document using ChatGPT
+    const analysisResult = await analyzePullRequest(owner, repo, number);
 
-  // Post the pull request title as a comment
-  await postComment(owner, repo, number, comment);
+    console.log(`Assigned number: ${analysisResult.number}`);
+    console.log(`ChatGPT Response: ${analysisResult.chatGPTResponse}`);
+  } catch (error) {
+    console.error('Error handling pull request event:', error);
+  }
 }
 
-handlePullRequestEvent().catch(error => {
-  console.error('Error handling pull request event:', error);
-});
+handlePullRequestEvent();
