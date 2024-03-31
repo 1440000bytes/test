@@ -1,5 +1,5 @@
 const { Octokit } = require("@octokit/rest");
-const axios = require("axios");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Create an Octokit instance
 const octokit = new Octokit({
@@ -35,25 +35,21 @@ async function analyzePullRequest(owner, repo, pull_number) {
     // Concatenate the question with the commit content
     const prompt = `Does the grammar of this commit content look correct? Is it related to Bitcoin? Do you see any issues or scope of improvement?\n\n${commitContent}`;
 
-    // Call ChatGPT API to analyze the commit content
-    const chatGPTResponse = await axios.post('https://api.openai.com/v1/completions', {
-      model: 'gpt-3.5-turbo-1106', // Adjust the model as needed
-      prompt: prompt,
-      max_tokens: 150, // Adjust as needed
-      temperature: 0.7, // Adjust as needed
-      stop: ['###'] // Adjust as needed
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` // Make sure to set this token in your environment or GitHub repository secrets
-      }
-    });
+    // Access your API key as an environment variable (see "Set up your API key" above)
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-    const chatGPTResponseText = chatGPTResponse.data.choices[0].text.trim();
+    // For text-only input, use the gemini-pro model
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+    // Generate content based on the prompt
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const responseText = await response.text();
+    console.log(responseText);
 
     return {
       number: pullRequestNumber,
-      chatGPTResponse: chatGPTResponseText
+      response: responseText
     };
   } catch (error) {
     console.error('Error analyzing pull request:', error);
@@ -69,11 +65,11 @@ async function handlePullRequestEvent() {
     // Assign a number to the pull request
     const pullRequestNumber = assignNumber(number);
 
-    // Analyze the pull request document using ChatGPT
+    // Analyze the pull request document using Google Generative AI
     const analysisResult = await analyzePullRequest(owner, repo, number);
 
     console.log(`Assigned number: ${analysisResult.number}`);
-    console.log(`ChatGPT Response: ${analysisResult.chatGPTResponse}`);
+    console.log(`Google Generative AI Response: ${analysisResult.response}`);
   } catch (error) {
     console.error('Error handling pull request event:', error);
   }
